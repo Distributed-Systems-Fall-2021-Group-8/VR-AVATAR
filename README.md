@@ -1,1 +1,1 @@
-# Distributed Systems Fall 2021 Group 8 Project VR-AVATAR
+# Distributed Systems Fall 2021 Group 8 Project VR-AVATAR Game Room

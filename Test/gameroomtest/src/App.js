@@ -1,37 +1,46 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import socketIOClient from "socket.io-client"
 
 const App = () => {
-  const [socket, setSocket] = useState(null)
   const [connected, setConnected] = useState("")
   const [position, setPosition] = useState({ "x": 0, "y": 0 })
   const [players, setPlayers] = useState([])
-  const [name, setName] = useState("")
+  const [chat, setChat] = useState([])
+  const [chatMessage, setChatMessage] = useState("")
+  const [name, setName] = useState((Math.random() + 1).toString(36).substring(7))// eslint-disable-line
   const [timer, setTimer] = useState(null)
+  const socketRef = useRef()
   useEffect(() => {
-    const socket = socketIOClient("http://localhost:3000")
-    socket.on("connect", data => {
+    socketRef.current = socketIOClient("http://localhost:3000", { query: `name=${name}&x=${position.x}&y=${position.y}` })
+    return () => socketRef.current.disconnect()
+  }, []) // eslint-disable-line
+  useEffect(() => {
+    socketRef.current.on("connect", data => {
       setConnected("yes")
     })
-    socket.on("name", (response) => {
-      setName(response.name)
-    })
-    socket.on("positionsChange", (response) => {
+    socketRef.current.on("positionsChange", (response) => {
       setPlayers(response.playersArray)
     })
-    setSocket(socket)
-  }, [])
+    socketRef.current.on("receiveChatMessage", (response) => {
+      setChat([...chat, response])
+    })
+  }, [chat, players])
+
   useEffect(() => {
-    if (socket) {
+    if (socketRef.current) {
       if (timer) {
         clearInterval(timer)
       }
       const newTimer = setInterval(() => {
-        socket.volatile.emit("positionChange", { name, x: position.x, y: position.y })
+        socketRef.current.volatile.emit("positionChange", { x: position.x, y: position.y })
       }, 500)
       setTimer(newTimer)
     }
-  }, [socket, name, position]) // eslint-disable-line
+  }, [name, position]) // eslint-disable-line
+  const submitChatMessage = (e) => {
+    e.preventDefault()
+    socketRef.current.emit("sendChatMessage", { content: chatMessage, name })
+  }
   return (
     <div>
       <div>Connected: {connected} and name: {name}</div>
@@ -59,6 +68,18 @@ const App = () => {
           )}
         </tbody>
       </table>
+      <div>Chat: </div>
+      <ul>
+        {chat.map(message =>
+          <li>
+            {`${message.content} -${message.name}`}
+          </li>
+        )}
+      </ul>
+      <form onSubmit={submitChatMessage}>
+        <input type="text" name="content" onChange={e => setChatMessage(e.target.value)} />
+        <input type="submit" value="send" />
+      </form>
     </div>
   )
 }

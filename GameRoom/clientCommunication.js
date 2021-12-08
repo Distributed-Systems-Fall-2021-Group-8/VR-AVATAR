@@ -12,6 +12,10 @@ const initializeClientCommunication = (io, playersArray) => {
             playersArray = playersArray.filter(player => player.id != socket.id)
             console.log(`user ${JSON.stringify(disconnectedPlayer)} disconnected`)
         })
+        socket.on("initialize", (response) => {
+            playersArray = playersArray.map(player => player.id == socket.id ? { ...player, name: response.name, y: response.y, x: response.x } : player)
+
+        })
         socket.on("positionChange", (response) => {
             playersArray = playersArray.map(player => player.id == socket.id ? { ...player, y: response.y, x: response.x } : player)
 

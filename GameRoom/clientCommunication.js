@@ -26,7 +26,7 @@ const initializeClientCommunication = (io, playersArray) => {
     })
 
     setInterval(() => {
-        let playersJSON = { playersArray: playersArray.map(player => { return { name: player.name, x: player.x, y: player.y } }) }
+        let playersJSON = { playersArray }
         io.volatile.emit("positionsChange", playersJSON)
     }, 500)
 }

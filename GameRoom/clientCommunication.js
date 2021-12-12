@@ -17,9 +17,14 @@ const initializeClientCommunication = (io, playersArray) => {
         })
         socket.on("playerJoin", (response) => {
             //playersArray = playersArray.map(player => player.id == socket.id ? { ...player, name: response.name, y: response.y, x: response.x } : player)
-            newPlayer = { id: socket.id, name: response.name, x: response.x, y: response.y }
-            playersArray = playersArray.concat(newPlayer)
-            io.emit("playerJoin", newPlayer)
+            if(playersArray.filter(player => player.id == socket.id).length == 0) {
+                newPlayer = { id: socket.id, name: response.name, x: response.x, y: response.y }
+                playersArray = playersArray.concat(newPlayer)
+                let playersJSON = { playersArray }
+                socket.emit("joinPlayersList", playersJSON)
+                io.emit("playerJoin", newPlayer)
+            }
+           
         })
         socket.on("positionChange", (response) => {
             playersArray = playersArray.map(player => player.id == socket.id ? { ...player, y: response.y, x: response.x } : player)
@@ -32,7 +37,7 @@ const initializeClientCommunication = (io, playersArray) => {
 
     setInterval(() => {
         let playersJSON = { playersArray }
-        io.volatile.emit("positionsChange", playersJSON)
+        io.emit("positionsChange", playersJSON)
     }, 500)
 }
 
